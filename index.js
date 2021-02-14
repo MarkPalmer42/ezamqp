@@ -11,7 +11,8 @@ const configHandler = require('./configHandler.js');
 
 const defaultConfig = 
 {
-    'autoReconnect': true,
+    'autoReconnectOnInit': true,
+    'autoReconnectOnConnectionLost': true,
     'reconnectStategy': 'exponential',
     'reconnectTimeMin': 200,
     'reconnectTimeMax': 60000,
