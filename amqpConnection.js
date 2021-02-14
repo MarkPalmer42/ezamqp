@@ -84,11 +84,11 @@ amqpConnection.prototype.attemptReconnect = function(url, config, resolve, rejec
     }
     else
     {
-        if('exponential' === config['reconnectStategy'])
+        if('exponential' === config['reconnectStrategy'])
         {
             this.reconnectTime *= config['reconnectFactor'];
         }
-        else if('linear' === config['reconnectStategy'])
+        else if('linear' === config['reconnectStrategy'])
         {
             this.reconnectTime += config['reconnectFactor'];
         }

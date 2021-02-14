@@ -13,7 +13,7 @@ const defaultConfig =
 {
     'autoReconnectOnInit': true,
     'autoReconnectOnConnectionLost': true,
-    'reconnectStategy': 'exponential',
+    'reconnectStrategy': 'exponential',
     'reconnectTimeMin': 200,
     'reconnectTimeMax': 60000,
     'reconnectFactor': 2,

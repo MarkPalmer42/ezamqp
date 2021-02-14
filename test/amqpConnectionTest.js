@@ -74,7 +74,7 @@ describe("AMQP connection", () =>
         {
             'autoReconnectOnInit': true,
             'autoReconnectOnConnectionLost': true,
-            'reconnectStategy': 'exponential',
+            'reconnectStrategy': 'exponential',
             'reconnectTimeMin': 200,
             'reconnectTimeMax': 60000,
             'reconnectFactor': 2,
@@ -144,7 +144,7 @@ describe("AMQP connection", () =>
     it("Reconnect with linear strategy", async () =>
     {
         maxRejections = 4;
-        config['reconnectStategy'] = 'linear';
+        config['reconnectStrategy'] = 'linear';
         config['reconnectTimeMin'] = 100;
         config['reconnectTimeMax'] = 500;
         config['reconnectFactor'] = 150;
@@ -172,7 +172,7 @@ describe("AMQP connection", () =>
     it("Reconnect with constant strategy", async () =>
     {
         maxRejections = 4;
-        config['reconnectStategy'] = 'constant';
+        config['reconnectStrategy'] = 'constant';
         config['reconnectTimeMin'] = 142;
         config['reconnectTimeMax'] = 500;
         config['reconnectFactor'] = 150;
