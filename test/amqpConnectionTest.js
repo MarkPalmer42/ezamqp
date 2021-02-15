@@ -16,7 +16,7 @@ chai.use(chaiAsPromised);
 chai.use(sinonChai);
 
 const amqplib = require('amqplib');
-const amqpConn = require('../amqpConnection.js');
+const amqpConn = require('../src/amqpConnection.js');
 
 describe("AMQP connection", () =>
 {

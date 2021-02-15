@@ -1,8 +1,8 @@
 
 const chai = require("chai");
 
-const validate = require('../configHandler.js').validate;
-const prepare = require('../configHandler.js').prepare;
+const validate = require('../src/configHandler.js').validate;
+const prepare = require('../src/configHandler.js').prepare;
 
 describe("Configuration", () =>
 {
