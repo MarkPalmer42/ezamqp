@@ -24,11 +24,23 @@ describe("AMQP connection", () =>
     const connectionObject =
     {
         closeCallback: undefined,
+        errorCallback: undefined,
         on: function(event, callback)
         {
             if('close' === event)
             {
                 this.closeCallback = callback;
+            }
+            else if('error' === event)
+            {
+                this.errorCallback = callback;
+            }
+        },
+        error: function()
+        {
+            if(this.errorCallback)
+            {
+                this.errorCallback();
             }
         },
         close: function()
@@ -111,7 +123,7 @@ describe("AMQP connection", () =>
 
         sinon.assert.calledWith(shceduleSpy, 300);
         
-        expect(conn).to.equal(connectionObject);
+        expect(conn.connection).to.equal(connectionObject);
     });
 
     it("Reconnect with exponential strategy", async () =>
@@ -138,7 +150,7 @@ describe("AMQP connection", () =>
         sinon.assert.calledWith(shceduleSpy, 900);
         sinon.assert.calledWith(shceduleSpy, 1000);
 
-        expect(conn).to.equal(connectionObject);
+        expect(conn.connection).to.equal(connectionObject);
     });
 
     it("Reconnect with linear strategy", async () =>
@@ -166,7 +178,7 @@ describe("AMQP connection", () =>
         sinon.assert.calledWith(shceduleSpy, 400);
         sinon.assert.calledWith(shceduleSpy, 500);
 
-        expect(conn).to.equal(connectionObject);
+        expect(conn.connection).to.equal(connectionObject);
     });
 
     it("Reconnect with constant strategy", async () =>
@@ -194,7 +206,7 @@ describe("AMQP connection", () =>
         sinon.assert.calledWith(shceduleSpy, 142);
         sinon.assert.calledWith(shceduleSpy, 142);
 
-        expect(conn).to.equal(connectionObject);
+        expect(conn.connection).to.equal(connectionObject);
     });
 
     it("Successful connection", async () =>
@@ -205,33 +217,12 @@ describe("AMQP connection", () =>
 
         var conn = await amqp.connect();
 
-        expect(conn).to.equal(connectionObject);
+        expect(conn.connection).to.equal(connectionObject);
     });
 
-    it("No reconnect attempt on connection close", async () =>
+    it("No reconnect attempt if connection closed by user", async () =>
     {
         maxRejections = 0;
-
-        var amqp = new amqpConn('amqp://nonexistent', config);
-
-        var conn = await amqp.connect();
-
-        var reconnectSpy = sinon.spy();
-
-        sinon.stub(amqp, 'attemptReconnect').callsFake(() =>
-        {
-            reconnectSpy();
-        });
-
-        conn.close();
-
-        sinon.assert.calledOnce(reconnectSpy);
-    });
-
-    it("Reconnect attempt on connection close", async () =>
-    {
-        maxRejections = 0;
-        config['autoReconnectOnConnectionLost'] = false;
 
         var amqp = new amqpConn('amqp://nonexistent', config);
 
@@ -247,6 +238,74 @@ describe("AMQP connection", () =>
         conn.close();
 
         sinon.assert.neverCalledWith(reconnectSpy);
+    });
+
+    it("Reconnect attempt on connection close", async () =>
+    {
+        maxRejections = 0;
+        config['autoReconnectOnConnectionLost'] = false;
+
+        var amqp = new amqpConn('amqp://nonexistent', config);
+
+        await amqp.connect();
+
+        var reconnectSpy = sinon.spy();
+
+        sinon.stub(amqp, 'attemptReconnect').callsFake(() =>
+        {
+            reconnectSpy();
+        });
+
+        connectionObject.close();
+
+        sinon.assert.neverCalledWith(reconnectSpy);
+    });
+
+    it("Close event called", async () =>
+    {
+        maxRejections = 0;
+
+        var amqp = new amqpConn('amqp://nonexistent', config);
+
+        await amqp.connect();
+
+        var closeEventSpy = sinon.spy();
+
+        amqp.on('close', () =>
+        {
+            closeEventSpy();
+        });
+
+        amqp.close();
+
+        sinon.assert.calledOnce(closeEventSpy);
+    });
+
+    it("Error event called", async () =>
+    {
+        maxRejections = 0;
+
+        var amqp = new amqpConn('amqp://nonexistent', config);
+
+        await amqp.connect();
+
+        var errorEventSpy = sinon.spy();
+
+        amqp.on('error', () =>
+        {
+            errorEventSpy();
+        });
+
+        connectionObject.error();
+
+        sinon.assert.calledOnce(errorEventSpy);
+    });
+
+    it("Invalid event", async () =>
+    {
+        var amqp = new amqpConn('amqp://nonexistent', config);
+
+        expect(() => { amqp.on('something'); }).to.throw();
     });
 
 });

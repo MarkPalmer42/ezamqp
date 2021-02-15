@@ -6,6 +6,9 @@
 */
 
 const amqpLib = require('amqplib');
+const EventEmitter = require('events');
+
+const validEvents = ['close', 'reconnect', 'error'];
 
 function amqpConnection(url, config)
 {
@@ -14,6 +17,9 @@ function amqpConnection(url, config)
     this.reconnectTime = 0;
     this.config = config;
     this.url = url;
+    this.connectionCloseCalled = false;
+    this.connection = undefined;
+    this.eventEmitter = new EventEmitter();
 }
 
 amqpConnection.prototype.connect = function()
@@ -22,6 +28,24 @@ amqpConnection.prototype.connect = function()
     {
         this.brokerConnect(this.url, this.config, resolve, reject);
     });
+}
+
+amqpConnection.prototype.on = function(eventName, callback)
+{
+    if(validEvents.find(x => x == eventName))
+    {
+        this.eventEmitter.on(eventName, callback);
+    }
+    else
+    {
+        throw Error('ezamqp error: invalid event ' + eventName + ' added to connection object.');
+    }
+}
+
+amqpConnection.prototype.close = function()
+{
+    this.connectionCloseCalled = true;
+    this.connection.close();
 }
 
 amqpConnection.prototype.scheduleReconnect = function(url, config, reconnectTime, resolve, reject)
@@ -43,25 +67,32 @@ amqpConnection.prototype.brokerConnect = function(url, config, resolve, reject)
 		{
 			/* Restore connection to its normal state after reconnection. */
 			// await restore_connection(conn);
+            this.eventEmitter.emit('reconnect');
 		}
 
         var self = this;
 
 		conn.on('error', function(exception)
 		{
-			
+			self.eventEmitter.emit('error', exception);
+
+            // TODO: handle error cases
 		});
 
 		conn.on('close', function(exception)
 		{
-			if(config['autoReconnectOnConnectionLost'])
+            self.eventEmitter.emit('close', exception);
+
+			if(!self.connectionCloseCalled && config['autoReconnectOnConnectionLost'])
 			{
 				self.reconnectOnLostConnectionAttempted = true;
 				self.attemptReconnect(url, config, resolve, reject);
 			}
 		});
 
-		resolve(conn);
+        this.connection = conn;
+
+		resolve(this);
 	})
 	.catch(exception =>
 	{
